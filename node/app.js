@@ -137,6 +137,9 @@ function PushEvent(frame, msg)
 
 function GotoEvent(e, x, y, end)
 {
+	if (e === undefined)
+		return;
+
 	e.startPos.x = e.x;
 	e.startPos.y = e.y;
 	e.endPos.x = x;
@@ -166,7 +169,44 @@ function Tick()
 				evt.x = msg.data.x;
 				evt.y = msg.data.y;
 				evt.f = tick + tickDelay;
-				evt.end = tick + tickDelay + 4;
+
+				var curx;
+				var cury;
+
+				var e = entities[msg.id];
+				if (e === undefined)
+					break;
+
+				if (e.endTick > tick)
+				{
+					var dif = e.endTick - e.startTick;
+
+					if (dif > 0)
+					{
+						var cur = 0.0 + (tick + tickDelay) - e.startTick;
+						var t = cur / dif;
+						if (t > 1)
+							t = 1;
+						curx = e.startPos.x * (1 - t) + e.endPos.x * t;
+						cury = e.startPos.y * (1 - t) + e.endPos.y * t;
+					}
+					else
+					{
+						curx = e.endPos.x;
+						cury = e.endPos.y;
+					}
+				}
+				else
+				{
+					curx = e.endPos.x;
+					cury = e.endPos.y;
+				}
+
+				var dx = curx - msg.data.x / 10;
+				var dy = cury - msg.data.y / 10;
+
+				evt.end = tick + tickDelay + 
+					Math.round(Math.sqrt(dx * dx + dy * dy));
 
 				PushEvent(tick + tickDelay, evt);
 
@@ -175,6 +215,7 @@ function Tick()
 			case "p":
 				// ping
 				users[msg.id].tick = tick;
+				break;
 		}
 	}
 
@@ -188,8 +229,10 @@ function Tick()
 		for (var i = 0; i < frame.length; i++)
 		{
 			var evt = frame[i];
-
 			var e = entities[evt.e];
+
+			if (e === undefined)
+				continue;
 
 			GotoEvent(e, evt.x / 10.0, evt.y / 10.0, evt.end);
 			

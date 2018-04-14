@@ -18,6 +18,11 @@ var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 var cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
 
+var groundGeo = new THREE.PlaneGeometry(1000, 1000);
+var groundMat = new THREE.MeshBasicMaterial( { color: 0x669966 } );
+var ground = new THREE.Mesh( groundGeo, groundMat );
+scene.add(ground);
+
 
 var manager = new THREE.LoadingManager();
 
@@ -353,11 +358,18 @@ function OnClick(event)
 
 	raycaster.setFromCamera( mouse, camera );
 	var intersects = raycaster.intersectObjects( scene.children );
-	for ( var i = 0; i < intersects.length; i++ ) {
-		//intersects[i].object.material = new THREE.MeshBasicMaterial({color: 0xff0000});
-		console.log(intersects[i].point);
 
-		SendMessage("goto", intersects[i].point);
+	if (intersects.length > 0)
+	{
+		for ( var i = 0; i < intersects.length; i++ ) {
+			//intersects[i].object.material = new THREE.MeshBasicMaterial({color: 0xff0000});
+			console.log(intersects[i].point);
+			SendMessage("goto", intersects[i].point);
+		}
+	}
+	else
+	{
+		console.log("no points found");
 	}
 
 }
