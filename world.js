@@ -407,5 +407,7 @@ function OnClick(event)
 
 }
 
-window.addEventListener( 'mousedown', OnClick, true );
-window.addEventListener( 'touchstart', OnClick, true );
+var canvas = document.getElementsByTagName("canvas")[0];
+
+canvas.addEventListener( 'mousedown', OnClick, true );
+canvas.addEventListener( 'touchstart', OnClick, true );
