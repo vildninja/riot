@@ -206,7 +206,7 @@ function Tick()
 				var dy = cury - msg.data.y / 10;
 
 				evt.end = tick + tickDelay + 
-					Math.round(Math.sqrt(dx * dx + dy * dy));
+					Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
 
 				PushEvent(tick + tickDelay, evt);
 
