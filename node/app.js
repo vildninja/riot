@@ -293,6 +293,8 @@ function Tick()
 	// transmit
 	for (var id in users)
 	{
+		if (users[id] === undefined || users[id].ws.isAlive === false)
+			continue;
 		users[id].ws.send(send);
 	}
 
