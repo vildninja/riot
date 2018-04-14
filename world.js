@@ -33,7 +33,10 @@ manager.onProgress = function ( item, loaded, total ) {
 
 };
 
+var isConnecting = false;
+var connectionStarted = false;
 var filesLoaded = false;
+
 manager.onLoad = function ( ) {
 
 	console.log( 'Loading complete!');
@@ -239,6 +242,22 @@ function Tick()
 
 function Update()
 {
+	if (!filesLoaded)
+	{
+		return;
+	}
+
+	if (!isConnecting)
+	{
+		isConnecting = true;
+		StartConnection();
+	}
+
+	if (!connectionStarted)
+	{
+		return;
+	}
+
 	var d = new Date();
 	var t = d.getTime() / 1000.0;
 	t = (t - frameStartTime) / tickLength;
@@ -274,12 +293,39 @@ function Update()
 //Connection
 
 
-var hostname = window.location.hostname;
+var socket;
 
-if (hostname == "")
-	hostname = "localhost";
+function StartConnection()
+{
 
-var socket = new WebSocket("ws://" + hostname + ":8080");
+	var hostname = window.location.hostname;
+	if (hostname == "")
+		hostname = "localhost";
+
+	socket = new WebSocket("ws://" + hostname + ":8080");
+
+	// Show a connected message when the WebSocket is opened.
+	socket.onopen = function(event) {
+		connectionStarted = true;
+		console.log('Connected to: ' + event.currentTarget.url);
+	};
+	// Handle any errors that occur.
+	socket.onerror = function(error) {
+		isConnecting = false;
+		console.log('WebSocket Error: ' + error);
+	};
+
+	// Handle messages sent by the server.
+	socket.onmessage = function(event) {
+		console.log(event.data);
+		var message = JSON.parse(event.data);
+
+		for (var i in message)
+			ReceiveMessage(message[i]);
+
+
+	};
+}
 
 function SendMessage(type, body)
 {
@@ -327,25 +373,6 @@ function ReceiveMessage(message)
 
 
 
-// Show a connected message when the WebSocket is opened.
-socket.onopen = function(event) {
-	console.log('Connected to: ' + event.currentTarget.url);
-};
-// Handle any errors that occur.
-socket.onerror = function(error) {
-	console.log('WebSocket Error: ' + error);
-};
-
-// Handle messages sent by the server.
-socket.onmessage = function(event) {
-	console.log(event.data);
-	var message = JSON.parse(event.data);
-
-	for (var i in message)
-		ReceiveMessage(message[i]);
-
-
-};
 
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();

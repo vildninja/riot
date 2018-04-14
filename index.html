@@ -23,7 +23,13 @@
 				if (filesLoaded)
 				{
 					Update();
-					document.getElementById("infotext").innerHTML = tick;
+					if (!filesLoaded)
+						document.getElementById("infotext").innerHTML = "Loading Game " + Math.random();
+					else if (!connectionStarted)
+						document.getElementById("infotext").innerHTML = "Connecting to server " + window.location.hostname + " " + Math.random();
+					else
+						document.getElementById("infotext").innerHTML = "Running " + tick;
+
 				}
 			}
 			animate();
