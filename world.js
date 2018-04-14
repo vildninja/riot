@@ -377,8 +377,14 @@ function ReceiveMessage(message)
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 
+var lastClickTime = 0;
+
 function OnClick(event)
 {
+	var d = new Date();
+	if (lastClickTime > d.getTime() - 50)
+		return;
+	lastClickTime = d.getTime();
 
 	mouse.x = ( event.clientX / width ) * 2 - 1;
 	mouse.y = - ( event.clientY / height ) * 2 + 1;
@@ -402,3 +408,4 @@ function OnClick(event)
 }
 
 window.addEventListener( 'mousedown', OnClick, false );
+window.addEventListener( 'touchstart', OnClick, false );
