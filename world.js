@@ -336,3 +336,25 @@ socket.onmessage = function(event) {
 
 
 };
+
+var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2();
+
+function OnClick(event)
+{
+
+	mouse.x = ( event.clientX / width ) * 2 - 1;
+	mouse.y = - ( event.clientY / height ) * 2 + 1;
+
+	raycaster.setFromCamera( mouse, camera );
+	var intersects = raycaster.intersectObjects( scene.children );
+	for ( var i = 0; i < intersects.length; i++ ) {
+		//intersects[i].object.material = new THREE.MeshBasicMaterial({color: 0xff0000});
+		console.log(intersects[i].point);
+
+		SendMessage("goto", intersects[i].point);
+	}
+
+}
+
+window.addEventListener( 'mousedown', OnClick, false );
