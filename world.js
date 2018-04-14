@@ -407,5 +407,5 @@ function OnClick(event)
 
 }
 
-window.addEventListener( 'mousedown', OnClick, false );
-window.addEventListener( 'touchstart', OnClick, false );
+window.addEventListener( 'mousedown', OnClick, true );
+window.addEventListener( 'touchstart', OnClick, true );

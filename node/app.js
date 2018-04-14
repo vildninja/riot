@@ -214,7 +214,8 @@ function Tick()
 				break;
 			case "p":
 				// ping
-				users[msg.id].tick = tick;
+				if (users[msg.id] != undefined)
+					users[msg.id].tick = tick;
 				break;
 		}
 	}
