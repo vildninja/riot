@@ -269,7 +269,12 @@ function Update()
 //Connection
 
 
-var socket = new WebSocket("ws://localhost:8080");
+var hostname = window.location.hostname;
+
+if (hostname == "")
+	hostname = "localhost";
+
+var socket = new WebSocket("ws://" + hostname + ":8080");
 
 function SendMessage(type, body)
 {
