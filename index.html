@@ -31,8 +31,17 @@
 						document.getElementById("infotext").innerHTML = "Running " + tick;
 
 				}
+
+				if (connectionStarted)
+				{
+					if (admin)
+					{
+						document.getElementById("adminmenu").style.display = "inline";
+					}
+				}
 			}
 			animate();
+
 
 			function Move(e, x, y)
 			{
@@ -41,11 +50,11 @@
 			}
 
 		</script>
-		<p id="infotext">Text</p>
-		<p style="display: none;">
-			<a href="#" onclick="Move(2, -1.0, 0.0)">left</a>
-			<a href="#" onclick="Move(2, 1.0, 0.0)">right</a>
-			<a href="#" onclick="Move(2, 0.0, 1.0)">up</a>
+		<p id="infotext">Loading Game</p>
+		<p id="adminmenu" style="display: none;">
+			<a href="#" onclick="clickState='move'">Move</a>
+			<a href="#" onclick="clickState='house'">House</a>
+			<a href="#" onclick="Move(2, 0.0, 1.0)">Wall</a>
 			<a href="#" onclick="Move(2, 0.0, -1.0)">down</a>
 			<a href="#" onclick="SendMessage('ping', {})">PING</a>
 		</p>

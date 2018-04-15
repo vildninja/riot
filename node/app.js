@@ -62,6 +62,26 @@ function KickUser(user)
 	commands.push({t:"k", e:user.id});
 }
 
+function AddEntity(msg)
+{
+	e.type = msg.type;
+	e.x = msg.x;
+	e.y = msg.y;
+
+	console.log("Add " + msg.type + " at x" + msg.x + " y" + msg.y);
+
+	e.startTick = 0;
+	e.endTick = 0;
+	e.startPos = {x:e.x, y:e.y};
+	e.endPos = {x:e.x, y:e.y};
+
+	e.id = nextId++;
+	entities[e.id] = e;
+
+	var s = AddToSpawn(e);
+	commands.push(s);
+}
+
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 8080 });
 
@@ -79,8 +99,8 @@ wss.on('connection', function connection(ws)
 	var e = {};
 	e.id = id;
 	e.type = "peop";
-	e.x = 2;
-	e.y = 2;
+	e.x = Math.random() * 8 - 4;
+	e.y = Math.random() * 8 - 4;
 
 	e.startTick = tick;
 	e.endTick = tick;
@@ -216,6 +236,9 @@ function Tick()
 				// ping
 				if (users[msg.id] != undefined)
 					users[msg.id].tick = tick;
+				break;
+			case "n":
+				AddEntity({type: msg.data.type, x: msg.data.x / 10, y: msg.data.y / 10});
 				break;
 		}
 	}

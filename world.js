@@ -1,5 +1,9 @@
 
 
+var admin = window.location.toString().includes("784ct3t6v789ny982yt92xynt782ynxr9yt872tcn82");
+var clickState = "move";
+console.log(window.location.toString());
+
 var width = window.innerWidth;
 var height = window.innerHeight - 100;
 
@@ -7,8 +11,16 @@ var height = window.innerHeight - 100;
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 45, width / height, 0.1, 1000 );
 
-camera.position.z = 7;
-camera.rotation.x = 45;
+if (admin)
+{
+	camera.position.z = 20;
+	camera.rotation.x = 0.5;
+}
+else
+{
+	camera.position.z = 7;
+	camera.rotation.x = 45;
+}
 
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize( width, height );
@@ -23,6 +35,8 @@ var grass = new THREE.TextureLoader().load( 'grass.jpg' );
 grass.wrapS = THREE.RepeatWrapping;
 grass.wrapT = THREE.RepeatWrapping;
 grass.repeat.set( 647, 647 );
+
+var shopTex = new THREE.TextureLoader().load( 'shop.jpg' );
 
 
 var groundGeo = new THREE.PlaneGeometry(1000, 1000);
@@ -101,31 +115,35 @@ function Entity(id, type, position)
 	this.id = id;
 	this.type = type;
 
+
+	var mat = {};
+
 	switch (type)
 	{
 		case "peop":
-			this.color = 0xaaaa33;
+			mat.color = Math.round(Math.random() * 0xffffff) & 0xffaf2f;
 			this.geometry = geometry["person.obj"];
 			break;
 		case "cop":
-			this.color = 0x3333cc;
+			mat.color = (Math.round(Math.random() * 0xffffff) | 0x000099) & 0x4444ff;
 			this.geometry = geometry["person.obj"];
 			break;
-		case "wall":
-			this.color = 0x555555;
+		case "wall2":
+			mat.color = 0x555555;
 			this.geometry = geometry["wall.obj"];
 			break;
-		case "house":
-			this.color = 0x555555;
+		case "wall":
+			mat.color = Math.round(Math.random() * 0xffffff) | 0xf0f0f0;
+			mat.map = shopTex;
 			this.geometry = geometry["house.obj"];
 			break;
 		case "box":
-			this.color = 0x555555;
+			mat.color = 0x555555;
 			this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
 			break;
 	}
 
-	var material = new THREE.MeshNormalMaterial( { color: this.color } );
+	var material = new THREE.MeshBasicMaterial( mat );
 	this.node = new THREE.Mesh( this.geometry, material );
 
 	this.node.position.x = position.x;
@@ -369,8 +387,15 @@ function SendMessage(type, body)
 			message.x = Math.round(body.x * 10);
 			message.y = Math.round(body.y * 10);
 			break;
+		case "new":
+			message.t = "n";
+			message.type = body.type;
+			message.x = Math.round(body.x) * 10;
+			message.y = Math.round(body.y) * 10;
+			break;
 	}
 
+	console.log(JSON.stringify(message));
 	socket.send(JSON.stringify(message));
 }
 
@@ -423,12 +448,60 @@ function OnClick(event)
 
 	if (intersects.length > 0)
 	{
+		var dest;
 		for ( var i = 0; i < intersects.length; i++ ) {
 			//intersects[i].object.material = new THREE.MeshBasicMaterial({color: 0xff0000});
-			console.log(intersects[i].point);
-			SendMessage("goto", intersects[i].point);
-			cube.position.x = intersects[i].point.x;
-			cube.position.y = intersects[i].point.y;
+			
+			dest = intersects[i].point;
+			break;
+		}
+
+
+		if (clickState == "move")
+		{
+			var me = entities[myId].node.position.clone();
+			var norm = dest.clone();
+			me.z = 0.2;
+			norm.z = 0.2;
+			norm.sub(me).setLength(1);
+
+			raycaster.set(me, norm);
+			intersects = raycaster.intersectObjects( scene.children );
+			console.log(intersects.length);
+
+			for ( var i = 0; i < intersects.length; i++ ) {
+				//intersects[i].object.material = new THREE.MeshBasicMaterial({color: 0xff0000});
+				
+				var type = intersects[i].object.userData.type;
+
+				var min = me.distanceTo(dest);
+
+				switch (type)
+				{
+					case "wall":
+						var p = intersects[i].point;
+						var d = me.distanceTo(p);
+						if (d < min)
+						{
+							min = d;
+
+							dest = me.clone();
+							dest.add(norm.clone().setLength(min - 0.3));
+						}
+						break;
+				}
+			}
+
+
+			delete dest.z;
+			cube.position.x = dest.x;
+			cube.position.y = dest.y;
+			console.log(dest);
+			SendMessage("goto", dest);
+		}
+		else if (clickState == "house")
+		{
+			SendMessage("new", {type:"wall", x:dest.x, y:dest.y});
 		}
 	}
 	else
