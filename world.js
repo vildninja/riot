@@ -7,7 +7,8 @@ var height = window.innerHeight - 100;
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 45, width / height, 0.1, 1000 );
 
-camera.position.z = 10;
+camera.position.z = 7;
+camera.rotation.x = 45;
 
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize( width, height );
@@ -18,8 +19,14 @@ var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 var cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
 
+var grass = new THREE.TextureLoader().load( 'grass.jpg' );
+grass.wrapS = THREE.RepeatWrapping;
+grass.wrapT = THREE.RepeatWrapping;
+grass.repeat.set( 647, 647 );
+
+
 var groundGeo = new THREE.PlaneGeometry(1000, 1000);
-var groundMat = new THREE.MeshBasicMaterial( { color: 0x669966 } );
+var groundMat = new THREE.MeshBasicMaterial( { map: grass } );
 var ground = new THREE.Mesh( groundGeo, groundMat );
 scene.add(ground);
 
@@ -36,6 +43,8 @@ manager.onProgress = function ( item, loaded, total ) {
 var isConnecting = false;
 var connectionStarted = false;
 var filesLoaded = false;
+
+var myId = -1;
 
 manager.onLoad = function ( ) {
 
@@ -69,6 +78,11 @@ function LoadSingle(file)
 				} );
 
 			}, onProgress, onError );
+}
+
+function LoadSingleTexture(file)
+{
+
 }
 
 function LoadAll(manager)
@@ -128,6 +142,7 @@ function Entity(id, type, position)
 
 	entities[id] = this;
 
+	this.node.userData = this;
 	scene.add(this.node);
 
 	this.Goto = Goto;
@@ -179,8 +194,10 @@ function PushTickEvent(frame, evt)
 		frames[frame].push(evt);
 }
 
-function StartGame(firstTick)
+function StartGame(msg)
 {
+	firstTick = msg.frame;
+	myId = msg.you;
 	tick = firstTick;
 
 	var d = new Date();
@@ -288,6 +305,18 @@ function Update()
 		e.node.position.x = e.startPos.x * (1 - nt) + e.endPos.x * nt;
 		e.node.position.y = e.startPos.y * (1 - nt) + e.endPos.y * nt;
 	}
+
+	if (myId > 0)
+	{
+		var me = entities[myId];
+		var dx = me.node.position.x - camera.position.x;
+		var dy = me.node.position.y - 10 - camera.position.y;
+
+		if (Math.abs(dx) > 0.1)
+			camera.position.x += dx * 0.05;
+		if (Math.abs(dy) > 0.1)
+			camera.position.y += dy * 0.05;
+	}
 }
 
 //Connection
@@ -352,7 +381,7 @@ function ReceiveMessage(message)
 	{
 		case "start":
 			// start the game
-			StartGame(message.frame);
+			StartGame(message);
 			break;
 		case "n":
 			// new entity
@@ -398,6 +427,8 @@ function OnClick(event)
 			//intersects[i].object.material = new THREE.MeshBasicMaterial({color: 0xff0000});
 			console.log(intersects[i].point);
 			SendMessage("goto", intersects[i].point);
+			cube.position.x = intersects[i].point.x;
+			cube.position.y = intersects[i].point.y;
 		}
 	}
 	else

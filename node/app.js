@@ -113,14 +113,14 @@ wss.on('connection', function connection(ws)
 	}
 
 	ws.send(JSON.stringify(spawn));
-	ws.send('[{"t":"start", "frame":' + tick + '}]')
+	ws.send('[{"t":"start", "frame":' + tick + ', "you":' + id + '}]')
 });
 
 console.log("Server started!");
 
 const tictTime = 250;
 const kickTimer = 20;
-const tickDelay = 4;
+const tickDelay = 2;
 
 var firstTickTime = Date.now();
 var nextTick = firstTickTime;
