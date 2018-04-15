@@ -83,6 +83,35 @@ function AddEntity(msg)
 	commands.push(s);
 }
 
+function ExportMap()
+{
+	var out = new Array();
+	for (var id in entities)
+	{
+		var e = entities[id];
+
+		switch (e.type)
+		{
+			case "house":
+			case "wall":
+			case "tall":
+			case "wall2":
+			case "box":
+				out.push({type:e.type, x:e.x, y:e.y});
+				break;
+		}
+	}
+
+	var fs = require('fs');
+	fs.writeFile("./live.json", JSON.stringify({entities:out}, null, 2), function(err) {
+	    if(err) {
+	        return console.log(err);
+	    }
+
+	    console.log("The file was saved!");
+	}); 
+}
+
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 8080 });
 
@@ -242,6 +271,9 @@ function Tick()
 				break;
 			case "n":
 				AddEntity({type: msg.data.type, x: msg.data.x / 10, y: msg.data.y / 10});
+				break;
+			case "save":
+				ExportMap();
 				break;
 		}
 	}

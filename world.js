@@ -475,6 +475,9 @@ function SendMessage(type, body)
 			message.x = Math.round(body.x) * 10;
 			message.y = Math.round(body.y) * 10;
 			break;
+		case "save":
+			message.t = "save";
+			break;
 	}
 
 	console.log(JSON.stringify(message));
