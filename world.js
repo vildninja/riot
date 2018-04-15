@@ -19,7 +19,7 @@ if (admin)
 else
 {
 	camera.position.z = 7;
-	camera.rotation.x = 45;
+	camera.rotation.x = Math.PI / 3;
 }
 
 var renderer = new THREE.WebGLRenderer();
@@ -37,12 +37,19 @@ grass.wrapT = THREE.RepeatWrapping;
 grass.repeat.set( 647, 647 );
 
 var shopTex = new THREE.TextureLoader().load( 'shop.jpg' );
+var shop2Tex = new THREE.TextureLoader().load( 'shop2.jpg' );
+
+var signTex = new THREE.TextureLoader().load( 'sign.png' );
+var forkTex = new THREE.TextureLoader().load( 'fork.png' );
+var uSignTex = new THREE.TextureLoader().load( 'u_sign.png' );
 
 
 var groundGeo = new THREE.PlaneGeometry(1000, 1000);
 var groundMat = new THREE.MeshBasicMaterial( { map: grass } );
 var ground = new THREE.Mesh( groundGeo, groundMat );
 scene.add(ground);
+
+var headGeo = new THREE.DodecahedronGeometry( 0.1, 0 );
 
 
 var manager = new THREE.LoadingManager();
@@ -104,6 +111,37 @@ function LoadAll(manager)
 	LoadSingle("house.obj");
 	LoadSingle("person.obj");
 	LoadSingle("wall.obj");
+	LoadSingle("quad.obj");
+}
+
+
+// seeded random from
+// https://stackoverflow.com/questions/424292/seedable-javascript-random-number-generator
+function RNG(seed) {
+  // LCG using GCC's constants
+  this.m = 0x80000000; // 2**31;
+  this.a = 1103515245;
+  this.c = 12345;
+
+  this.state = seed ? seed : Math.floor(Math.random() * (this.m - 1));
+}
+RNG.prototype.nextInt = function() {
+  this.state = (this.a * this.state + this.c) % this.m;
+  return this.state;
+}
+RNG.prototype.nextFloat = function() {
+  // returns in range [0,1]
+  return this.nextInt() / (this.m - 1);
+}
+RNG.prototype.nextRange = function(start, end) {
+  // returns in range [start, end): including start, excluding end
+  // can't modulu nextInt because of weak randomness in lower bits
+  var rangeSize = end - start;
+  var randomUnder1 = this.nextInt() / this.m;
+  return start + Math.floor(randomUnder1 * rangeSize);
+}
+RNG.prototype.choice = function(array) {
+  return array[this.nextRange(0, array.length)];
 }
 
 
@@ -114,32 +152,43 @@ function Entity(id, type, position)
 
 	this.id = id;
 	this.type = type;
+	this.block = false;
 
+	var rand = new RNG(id * 5217856921);
 
 	var mat = {};
 
 	switch (type)
 	{
 		case "peop":
-			mat.color = Math.round(Math.random() * 0xffffff) & 0xffaf2f;
+			mat.color = rand.nextRange(0, 0xffffff) & 0x5f5f2f;
 			this.geometry = geometry["person.obj"];
 			break;
 		case "cop":
-			mat.color = (Math.round(Math.random() * 0xffffff) | 0x000099) & 0x4444ff;
+			mat.color = (rand.nextRange(0, 0xffffff) | 0x000099) & 0x4444ff;
 			this.geometry = geometry["person.obj"];
 			break;
 		case "wall2":
 			mat.color = 0x555555;
 			this.geometry = geometry["wall.obj"];
+			this.block = true;
 			break;
 		case "wall":
-			mat.color = Math.round(Math.random() * 0xffffff) | 0xf0f0f0;
+			mat.color = rand.nextRange(0, 0xffffff) | 0xf0f0f0;
 			mat.map = shopTex;
 			this.geometry = geometry["house.obj"];
+			this.block = true;
+			break;
+		case "tall":
+			mat.color = rand.nextRange(0, 0xffffff) | 0xf0f0f0;
+			mat.map = shop2Tex;
+			this.geometry = geometry["house.obj"];
+			this.block = true;
 			break;
 		case "box":
 			mat.color = 0x555555;
 			this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+			this.block = true;
 			break;
 	}
 
@@ -161,6 +210,30 @@ function Entity(id, type, position)
 	entities[id] = this;
 
 	this.node.userData = this;
+
+	switch (type)
+	{
+		case "peop":
+			material = new THREE.MeshBasicMaterial( {color:rand.nextRange(0x000000, 0x999999)} );
+			var head = new THREE.Mesh( headGeo, material );
+			head.position.z = 0.45;
+			this.node.add(head);
+
+			this.itemMat = new THREE.MeshBasicMaterial( {
+					color:rand.nextRange(0x000000, 0x009999),
+					map:rand.choice([signTex, forkTex])
+				} );
+			this.itemMat.alphaTest = 0.5;
+			var item = new THREE.Mesh( geometry["quad.obj"], this.itemMat );
+			item.position.z = 0.3;
+			item.position.x = -0.1;
+			item.rotation.y = -0.15 - rand.nextFloat() * 0.3;
+			this.node.add(item);
+		case "tall":
+			this.node.scale.z = 1.5;
+			break;
+	}
+
 	scene.add(this.node);
 
 	this.Goto = Goto;
@@ -220,6 +293,12 @@ function StartGame(msg)
 
 	var d = new Date();
 	frameStartTime = d.getTime() / 1000.0;
+
+	if (entities[myId] != undefined)
+	{
+		entities[myId].itemMat.map = uSignTex;
+		entities[myId].itemMat.color.r = 1.0;
+	}
 }
 
 function Tick()
@@ -439,7 +518,7 @@ var lastClickTime = 0;
 function OnClick(event)
 {
 	var d = new Date();
-	if (lastClickTime > d.getTime() - 50)
+	if (lastClickTime > d.getTime() - 10 && !admin)
 		return;
 	lastClickTime = d.getTime();
 
@@ -472,26 +551,21 @@ function OnClick(event)
 			intersects = raycaster.intersectObjects( scene.children );
 			console.log(intersects.length);
 
+			var min = me.distanceTo(dest);
 			for ( var i = 0; i < intersects.length; i++ ) {
 				//intersects[i].object.material = new THREE.MeshBasicMaterial({color: 0xff0000});
 				
-				var type = intersects[i].object.userData.type;
-
-				var min = me.distanceTo(dest);
-
-				switch (type)
+				if (intersects[i].object.userData.block)
 				{
-					case "wall":
-						var p = intersects[i].point;
-						var d = me.distanceTo(p);
-						if (d < min)
-						{
-							min = d;
+					var p = intersects[i].point;
+					var d = me.distanceTo(p);
+					if (d < min)
+					{
+						min = d;
 
-							dest = me.clone();
-							dest.add(norm.clone().setLength(min - 0.3));
-						}
-						break;
+						dest = me.clone();
+						dest.add(norm.clone().setLength(min - 0.3));
+					}
 				}
 			}
 
@@ -504,7 +578,17 @@ function OnClick(event)
 		}
 		else if (clickState == "house")
 		{
-			SendMessage("new", {type:"wall", x:dest.x, y:dest.y});
+			var par = {x:dest.x, y:dest.y};
+
+			var r = Math.random() * 2;
+
+			if (r < 1)
+				par.type = "wall";
+			else
+				par.type = "tall";
+
+
+			SendMessage("new", par);
 		}
 	}
 	else
