@@ -38,6 +38,7 @@ grass.repeat.set( 647, 647 );
 
 var shopTex = new THREE.TextureLoader().load( 'shop.jpg' );
 var shop2Tex = new THREE.TextureLoader().load( 'shop2.jpg' );
+var treeTex = new THREE.TextureLoader().load( 'tree.png' );
 
 var signTex = new THREE.TextureLoader().load( 'sign.png' );
 var forkTex = new THREE.TextureLoader().load( 'fork.png' );
@@ -112,6 +113,7 @@ function LoadAll(manager)
 	LoadSingle("person.obj");
 	LoadSingle("wall.obj");
 	LoadSingle("quad.obj");
+	LoadSingle("tree.obj");
 }
 
 
@@ -185,6 +187,12 @@ function Entity(id, type, position)
 			this.geometry = geometry["house.obj"];
 			this.block = true;
 			break;
+		case "tree":
+			mat.color = rand.nextRange(0, 0xffffff) | 0xf0f0f0;
+			mat.map = treeTex;
+			this.geometry = geometry["tree.obj"];
+			this.block = true;
+			break;
 		case "box":
 			mat.color = 0x555555;
 			this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
@@ -231,6 +239,9 @@ function Entity(id, type, position)
 			this.node.add(item);
 		case "tall":
 			this.node.scale.z = 1.5;
+			break;
+		case "tree":
+			material.alphaTest = 0.5;
 			break;
 	}
 
@@ -472,8 +483,12 @@ function SendMessage(type, body)
 		case "new":
 			message.t = "n";
 			message.type = body.type;
-			message.x = Math.round(body.x) * 10;
-			message.y = Math.round(body.y) * 10;
+			message.x = Math.round(body.x * 10);
+			message.y = Math.round(body.y * 10);
+			break;
+		case "kill":
+			message.t = "k";
+			message.e = body;
 			break;
 		case "save":
 			message.t = "save";
@@ -533,11 +548,13 @@ function OnClick(event)
 
 	if (intersects.length > 0)
 	{
+		var entity;
 		var dest;
 		for ( var i = 0; i < intersects.length; i++ ) {
 			//intersects[i].object.material = new THREE.MeshBasicMaterial({color: 0xff0000});
 			
 			dest = intersects[i].point;
+			entity = intersects[i].object.userData;
 			break;
 		}
 
@@ -581,7 +598,7 @@ function OnClick(event)
 		}
 		else if (clickState == "house")
 		{
-			var par = {x:dest.x, y:dest.y};
+			var par = {x:Math.round(dest.x), y:Math.round(dest.y)};
 
 			var r = Math.random() * 2;
 
@@ -592,6 +609,19 @@ function OnClick(event)
 
 
 			SendMessage("new", par);
+		}
+		else if (clickState == "tree")
+		{
+			var par = {x:dest.x, y:dest.y};
+
+			par.type = "tree";
+
+			SendMessage("new", par);
+		}
+		else if (clickState == "kill")
+		{
+			if (entity != undefined)
+				SendMessage("kill", entity.id);
 		}
 	}
 	else

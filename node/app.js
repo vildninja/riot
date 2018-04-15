@@ -53,13 +53,23 @@ const users = {};
 const messages = new Array();
 const commands = new Array();
 
+function RemoveEntity(id)
+{
+	if (entities[id] === undefined)
+		return;
+	RemoveFromSpawn(id);
+	delete entities[id];
+	commands.push({t:"k", e:id});
+}
+
 function KickUser(user)
 {
+	if (users[user.id] === undefined)
+		return;
+
+	RemoveEntity(user.id);
 	user.ws.close();
-	RemoveFromSpawn(user.id);
-	delete entities[user.id];
 	delete users[user.id];
-	commands.push({t:"k", e:user.id});
 }
 
 function AddEntity(msg)
@@ -97,6 +107,9 @@ function ExportMap()
 			case "tall":
 			case "wall2":
 			case "box":
+			case "tree":
+			case "grass":
+			case "bush":
 				out.push({type:e.type, x:e.x, y:e.y});
 				break;
 		}
@@ -272,6 +285,10 @@ function Tick()
 			case "n":
 				AddEntity({type: msg.data.type, x: msg.data.x / 10, y: msg.data.y / 10});
 				break;
+			case "k":
+				if (users[msg.data.e] === undefined)
+					RemoveEntity(msg.data.e);
+				break;
 			case "save":
 				ExportMap();
 				break;
@@ -317,6 +334,8 @@ function Tick()
 		}
 
 		var e = entities[user.id];
+		if (e === undefined)
+			continue;
 
 		if (e.endTick >= tick)
 		{
