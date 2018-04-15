@@ -155,8 +155,8 @@ function Entity(id, type, position)
 
 	this.startTick = 0;
 	this.endTick = 0;
-	this.startPos = position;
-	this.endPos = position;
+	this.startPos = {x:position.x, y:position.y};
+	this.endPos = {x:position.x, y:position.y};
 
 	entities[id] = this;
 
@@ -231,7 +231,8 @@ function Tick()
 		var e = entities[i];
 		if (e.endTick == tick)
 		{
-			e.startPos = e.endPos;
+			e.startPos.x = e.endPos.x;
+			e.startPos.y = e.endPos.y;
 			e.startTick = e.endTick;
 		}
 	}
@@ -263,11 +264,13 @@ function Tick()
 			}
 			else
 			{
-				e.startPos = e.endPos;
+				e.startPos.x = e.endPos.x;
+				e.startPos.y = e.endPos.y;
 			}
 		}
 
-		e.endPos = evt.pos;
+		e.endPos.x = evt.pos.x;
+		e.endPos.y = evt.pos.y;
 		e.startTick = tick;
 		e.endTick = evt.end;
 	}

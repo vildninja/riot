@@ -64,6 +64,7 @@ function KickUser(user)
 
 function AddEntity(msg)
 {
+	var e = {};
 	e.type = msg.type;
 	e.x = msg.x;
 	e.y = msg.y;
@@ -127,13 +128,15 @@ wss.on('connection', function connection(ws)
 		KickUser(user);
 	});
 
-	for (var i = 0; i < spawn.length; i++) {
+	for (var i = 0; i < spawn.length; i++)
+	{
 		spawn[i].x = Math.round(entities[spawn[i].id].x * 10);
 		spawn[i].y = Math.round(entities[spawn[i].id].y * 10);
 	}
 
 	ws.send(JSON.stringify(spawn));
 	ws.send('[{"t":"start", "frame":' + tick + ', "you":' + id + '}]')
+
 });
 
 console.log("Server started!");
@@ -316,10 +319,20 @@ function Tick()
 	// transmit
 	for (var id in users)
 	{
-		if (users[id] === undefined || users[id].ws.isAlive === false)
+		if (users[id] === undefined || users[id].ws.isAlive == false)
 			continue;
-		users[id].ws.send(send);
+		try
+		{
+			users[id].ws.send(send);
+		}
+		catch (err)
+		{
+			console.log(err);
+		}
 	}
+
+
+	//console.log(entities);
 
 
 	var delay = nextTick - Date.now();
