@@ -281,6 +281,7 @@ var frames = {};
 
 var tick = 0;
 
+var tickDelay = 2;
 var tickLength = 0.25;
 var frameStartTime = 0;
 var lastPing = 0;
@@ -289,6 +290,13 @@ function PushTickEvent(frame, evt)
 {
 	if (frame <= tick)
 		frame = tick + 1;
+
+	if (frame > tick + tickDelay)
+	{
+		let d = new Date();
+		let time = g.getTime() / 1000.0;
+		// TODO: catch up, so we are no more than <tickDelay> behind
+	}
 
 	if (frames[frame] === undefined)
 		frames[frame] = [evt];

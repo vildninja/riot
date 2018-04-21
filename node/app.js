@@ -1,12 +1,12 @@
 
 const entities = {};
-var nextId = 5;
+let nextId = 5;
 
 const level = require('./level.json');
 
-for (var i in level.entities)
+for (let i in level.entities)
 {
-	var e = level.entities[i];
+	let e = level.entities[i];
 
 	e.startTick = 0;
 	e.endTick = 0;
@@ -21,7 +21,7 @@ const spawn = new Array();
 
 function AddToSpawn(entity)
 {
-	var s = {};
+	let s = {};
 	s.t = "n";
 	s.id = entity.id;
 	s.type = entity.type;
@@ -33,7 +33,7 @@ function AddToSpawn(entity)
 
 function RemoveFromSpawn(id)
 {
-	for (var i = 0; i < spawn.length; i++) {
+	for (let i = 0; i < spawn.length; i++) {
 		if (spawn[i].id == id)
 		{
 			spawn.splice(i, 1);
@@ -42,12 +42,13 @@ function RemoveFromSpawn(id)
 	}
 }
 
-for (var i in entities)
+for (let i in entities)
 {
 	AddToSpawn(entities[i]);
 }
 
-var tick = 0;
+let tick = 0;
+const tickDelay = 2;
 
 const users = {};
 const messages = new Array();
@@ -74,7 +75,7 @@ function KickUser(user)
 
 function AddEntity(msg)
 {
-	var e = {};
+	let e = {};
 	e.type = msg.type;
 	e.x = msg.x;
 	e.y = msg.y;
@@ -89,16 +90,16 @@ function AddEntity(msg)
 	e.id = nextId++;
 	entities[e.id] = e;
 
-	var s = AddToSpawn(e);
+	let s = AddToSpawn(e);
 	commands.push(s);
 }
 
 function ExportMap()
 {
-	var out = new Array();
-	for (var id in entities)
+	let out = new Array();
+	for (let id in entities)
 	{
-		var e = entities[id];
+		let e = entities[id];
 
 		switch (e.type)
 		{
@@ -115,7 +116,7 @@ function ExportMap()
 		}
 	}
 
-	var fs = require('fs');
+	let fs = require('fs');
 	fs.writeFile("./live.json", JSON.stringify({entities:out}, null, 2), function(err) {
 	    if(err) {
 	        return console.log(err);
@@ -130,16 +131,16 @@ const wss = new WebSocket.Server({ port: 8080 });
 
 wss.on('connection', function connection(ws)
 {
-	var id = nextId++;
+	let id = nextId++;
 
-	var user = {};
+	let user = {};
 	user.id = id;
 	user.ws = ws;
 	user.tick = tick;
 
 	users[id] = user;
 
-	var e = {};
+	let e = {};
 	e.id = id;
 	e.type = "peop";
 	e.x = Math.random() * 8 - 4;
@@ -151,14 +152,14 @@ wss.on('connection', function connection(ws)
 	e.endPos = {x:e.x, y:e.y};
 
 	entities[id] = e;
-	var s = AddToSpawn(e);
+	let s = AddToSpawn(e);
 	commands.push(s);
 
 
 	console.log('Connection');
 	ws.on('message', function incoming(message)
 	{
-		var msg = {};
+		let msg = {};
 		msg.id = id;
 		msg.data = JSON.parse(message);
 		messages.push(msg);
@@ -170,14 +171,14 @@ wss.on('connection', function connection(ws)
 		KickUser(user);
 	});
 
-	for (var i = 0; i < spawn.length; i++)
+	for (let i = 0; i < spawn.length; i++)
 	{
 		spawn[i].x = Math.round(entities[spawn[i].id].x * 10);
 		spawn[i].y = Math.round(entities[spawn[i].id].y * 10);
 	}
 
 	ws.send(JSON.stringify(spawn));
-	ws.send('[{"t":"start", "frame":' + tick + ', "you":' + id + '}]')
+	ws.send('[{"t":"start", "frame":' + (tick - tickDelay) + ', "you":' + id + '}]')
 
 });
 
@@ -185,12 +186,11 @@ console.log("Server started!");
 
 const tictTime = 250;
 const kickTimer = 20;
-const tickDelay = 2;
 
-var firstTickTime = Date.now();
-var nextTick = firstTickTime;
+let firstTickTime = Date.now();
+let nextTick = firstTickTime;
 
-var frames = {};
+let frames = {};
 
 function PushEvent(frame, msg)
 {
@@ -219,37 +219,39 @@ function Tick()
 	console.log("Tick " + tick)
 	nextTick += tictTime;
 
-	for (var i = 0; i < messages.length; i++)
+	let frame = new Array();
+
+	for (let i = 0; i < messages.length; i++)
 	{
-		var msg = messages[i]
+		let msg = messages[i]
 		console.log('received from(%d): %s', msg.id, msg.data.t);
 
 		switch (msg.data.t)
 		{
 			case "g":
 				// goto
-				var evt = {};
+				let evt = {};
 				evt.t = "g";
 				evt.e = msg.id;
 				evt.x = msg.data.x;
 				evt.y = msg.data.y;
-				evt.f = tick + tickDelay;
+				evt.f = tick;
 
-				var curx;
-				var cury;
+				let curx;
+				let cury;
 
-				var e = entities[msg.id];
+				let e = entities[msg.id];
 				if (e === undefined)
 					break;
 
 				if (e.endTick > tick)
 				{
-					var dif = e.endTick - e.startTick;
+					let dif = e.endTick - e.startTick;
 
 					if (dif > 0)
 					{
-						var cur = 0.0 + (tick + tickDelay) - e.startTick;
-						var t = cur / dif;
+						let cur = 0.0 + tick - e.startTick;
+						let t = cur / dif;
 						if (t > 1)
 							t = 1;
 						curx = e.startPos.x * (1 - t) + e.endPos.x * t;
@@ -267,13 +269,13 @@ function Tick()
 					cury = e.endPos.y;
 				}
 
-				var dx = curx - msg.data.x / 10;
-				var dy = cury - msg.data.y / 10;
+				let dx = curx - msg.data.x / 10;
+				let dy = cury - msg.data.y / 10;
 
-				evt.end = tick + tickDelay + 
-					Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+				evt.end = tick + Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
 
-				PushEvent(tick + tickDelay, evt);
+				frame.push(evt);
+				//PushEvent(tick + tickDelay, evt);
 
 				commands.push(evt);
 				break;
@@ -297,15 +299,15 @@ function Tick()
 
 	messages.length = 0;
 
-	var frame;
-	if (frames[tick] != undefined)
-	{
-		frame = frames[tick];
+//	let frame;
+//	if (frames[tick] != undefined)
+//	{
+//		frame = frames[tick];
 
-		for (var i = 0; i < frame.length; i++)
+		for (let i = 0; i < frame.length; i++)
 		{
-			var evt = frame[i];
-			var e = entities[evt.e];
+			let evt = frame[i];
+			let e = entities[evt.e];
 
 			if (e === undefined)
 				continue;
@@ -314,15 +316,15 @@ function Tick()
 			
 		}
 
-		delete frames[tick];
-	}
+//		delete frames[tick];
+//	}
 
 
 
 	// move
-	for (var id in users)
+	for (let id in users)
 	{
-		var user = users[id];
+		let user = users[id];
 
 		if (user.tick < tick - kickTimer)
 		{
@@ -333,18 +335,18 @@ function Tick()
 			continue;
 		}
 
-		var e = entities[user.id];
+		let e = entities[user.id];
 		if (e === undefined)
 			continue;
 
 		if (e.endTick >= tick)
 		{
-			var dif = e.endTick - e.startTick;
+			let dif = e.endTick - e.startTick;
 
 			if (dif > 0)
 			{
-				var cur = 0.0 + tick - e.startTick;
-				var t = cur / dif;
+				let cur = 0.0 + tick - e.startTick;
+				let t = cur / dif;
 				e.x = e.startPos.x * (1 - t) + e.endPos.x * t;
 				e.y = e.startPos.y * (1 - t) + e.endPos.y * t;
 			}
@@ -356,19 +358,19 @@ function Tick()
 	}
 
 	// evaluate
-	for (var id in users)
+	for (let id in users)
 	{
-		var user = users[id];
+		let user = users[id];
 
 
 
 	}
 
-	var send = JSON.stringify(commands)
+	let send = JSON.stringify(commands)
 	commands.length = 0;
 
 	// transmit
-	for (var id in users)
+	for (let id in users)
 	{
 		if (users[id] === undefined || users[id].ws.isAlive == false)
 			continue;
@@ -386,7 +388,7 @@ function Tick()
 	//console.log(entities);
 
 
-	var delay = nextTick - Date.now();
+	let delay = nextTick - Date.now();
 	if (delay < 1)
 		delay = 1;
 	setTimeout(Tick, delay);
