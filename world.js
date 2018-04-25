@@ -294,7 +294,7 @@ function PushTickEvent(frame, evt)
 	if (frame > tick + tickDelay)
 	{
 		let d = new Date();
-		let time = g.getTime() / 1000.0;
+		let time = d.getTime() / 1000.0;
 		// TODO: catch up, so we are no more than <tickDelay> behind
 	}
 
@@ -451,6 +451,7 @@ function StartConnection()
 		hostname = "localhost";
 
 	socket = new WebSocket("ws://" + hostname + ":8080");
+	socket.binaryType = 'arraybuffer';
 
 	// Show a connected message when the WebSocket is opened.
 	socket.onopen = function(event) {
@@ -465,8 +466,10 @@ function StartConnection()
 
 	// Handle messages sent by the server.
 	socket.onmessage = function(event) {
-		console.log(event.data);
-		var message = JSON.parse(event.data);
+		var buffer = new Uint8Array(event.data);
+		let data = LZString.decompressFromUint8Array(buffer);
+		console.log(buffer.length + " -> " + data);
+		var message = JSON.parse(data);
 
 		for (var i in message)
 			ReceiveMessage(message[i]);
@@ -504,7 +507,7 @@ function SendMessage(type, body)
 	}
 
 	console.log(JSON.stringify(message));
-	socket.send(JSON.stringify(message));
+	socket.send(LZString.compressToUint8Array(JSON.stringify(message)));
 }
 
 function ReceiveMessage(message)

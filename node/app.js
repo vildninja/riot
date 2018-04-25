@@ -129,6 +129,13 @@ function ExportMap()
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 8080 });
 
+const LZString = require('./lz-string.min.js');
+
+function Zend(ws, msg)
+{
+	ws.send(LZString.compressToUint8Array(msg));
+}
+
 wss.on('connection', function connection(ws)
 {
 	let id = nextId++;
@@ -161,7 +168,7 @@ wss.on('connection', function connection(ws)
 	{
 		let msg = {};
 		msg.id = id;
-		msg.data = JSON.parse(message);
+		msg.data = JSON.parse(LZString.decompressFromUint8Array(message));
 		messages.push(msg);
 	});
 
@@ -177,8 +184,8 @@ wss.on('connection', function connection(ws)
 		spawn[i].y = Math.round(entities[spawn[i].id].y * 10);
 	}
 
-	ws.send(JSON.stringify(spawn));
-	ws.send('[{"t":"start", "frame":' + (tick - tickDelay) + ', "you":' + id + '}]')
+	Zend(ws, JSON.stringify(spawn));
+	Zend(ws, '[{"t":"start", "frame":' + (tick - tickDelay) + ', "you":' + id + '}]')
 
 });
 
@@ -376,7 +383,7 @@ function Tick()
 			continue;
 		try
 		{
-			users[id].ws.send(send);
+			Zend(users[id].ws, send);
 		}
 		catch (err)
 		{
