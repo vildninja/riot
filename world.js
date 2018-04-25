@@ -295,7 +295,11 @@ function PushTickEvent(frame, evt)
 	{
 		let d = new Date();
 		let time = d.getTime() / 1000.0;
-		// TODO: catch up, so we are no more than <tickDelay> behind
+		// Untested: catch up, so we are no more than <tickDelay> behind
+		// Server MUST never schedule events furhter ahead than <tickDelay> ticks ahead
+		let dif = frame - (tick + tickDelay);
+		console.log(frameStartTime + " > catch up > " + (time - dif * tickLength));
+		frameStartTime = time - dif * tickLength;
 	}
 
 	if (frames[frame] === undefined)
