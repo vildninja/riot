@@ -127,7 +127,20 @@ function ExportMap()
 }
 
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8080 });
+// const wss = new WebSocket.Server({ port: 8080 });
+
+const https = require('https');
+const fs = require('fs');
+
+// ssl_certificate /etc/letsencrypt/live/www.pew.dk/fullchain.pem;
+// ssl_certificate_key /etc/letsencrypt/live/www.pew.dk/privkey.pem;
+
+const server = https.createServer({
+	cert: fs.readFileSync('/etc/letsencrypt/live/www.pew.dk/fullchain.pem'),
+	key: fs.readFileSync('/etc/letsencrypt/live/www.pew.dk/privkey.pem')
+}).listen(8080);
+
+const wss = new WebSocket.Server({ server });
 
 const LZString = require('./lz-string.min.js');
 
